@@ -2,6 +2,9 @@
 Task 2: Review Sentiment Prediction - EDA Module
 Additional analysis specific to text classification task
 """
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,9 +54,11 @@ def analyze_review_sentiment_distribution(review_df, save_path=None):
     ax3.set_yscale('log')
 
     plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    if save_path is None:
+        save_path = 'sentiment_distribution.png'
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"   ✓ Saved plot to: {save_path}")
+    plt.close()
 
     # Print statistics
     print("\n📊 Sentiment Distribution Statistics:")
@@ -73,10 +78,10 @@ def analyze_review_sentiment_distribution(review_df, save_path=None):
         print(f"   ✓ Classes relatively balanced (ratio: {imbalance_ratio:.2f}:1)")
 
 
-def extract_review_text_from_steam_reviews(steam_reviews_file='data/Steam Reviews.json'):
+def extract_review_text_from_steam_reviews(steam_reviews_file='data/Australian User Reviews.json'):
     """
-    Extract review text from Steam Reviews dataset
-    Returns DataFrame with user_id, product_id, review_text, recommend
+    Extract review text from Australian User Reviews dataset
+    Returns DataFrame with user_id, item_id, review_text, recommend
     """
     import json
 
@@ -84,17 +89,21 @@ def extract_review_text_from_steam_reviews(steam_reviews_file='data/Steam Review
     with open(steam_reviews_file, 'r', encoding='utf-8') as f:
         for line in f:
             try:
-                review = json.loads(line)
-                if 'review' in review and 'recommended' in review:
-                    reviews_data.append({
-                        'user_id': review.get('username', 'unknown'),
-                        'product_id': review.get('product_id', None),
-                        'review_text': review['review'],
-                        'recommend': review['recommended'],
-                        'hours': review.get('hours', 0.0),
-                        'date': review.get('date', None)
-                    })
-            except:
+                user_data = json.loads(line)
+                user_id = user_data.get('user_id', 'unknown')
+
+                # Each user has multiple reviews
+                for review in user_data.get('reviews', []):
+                    if 'review' in review and 'recommend' in review:
+                        reviews_data.append({
+                            'user_id': user_id,
+                            'item_id': review.get('item_id', None),
+                            'review_text': review['review'],
+                            'recommend': review['recommend'],
+                            'posted': review.get('posted', None),
+                            'helpful': review.get('helpful', None)
+                        })
+            except Exception as e:
                 continue
 
     reviews_df = pd.DataFrame(reviews_data)
@@ -187,9 +196,11 @@ def analyze_review_text_characteristics(reviews_df, text_column='review_text', s
     ax6.legend()
 
     plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    if save_path is None:
+        save_path = 'sentiment_distribution.png'
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"   ✓ Saved plot to: {save_path}")
+    plt.close()
 
     # Print statistics
     print("\n📝 Review Text Statistics:")
@@ -264,9 +275,11 @@ def analyze_common_words(reviews_df, text_column='review_text', n_top=20, save_p
     ax2.set_title(f'Top {n_top} Words in NEGATIVE Reviews', fontsize=12, fontweight='bold')
 
     plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    if save_path is None:
+        save_path = 'sentiment_distribution.png'
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    print(f"   ✓ Saved plot to: {save_path}")
+    plt.close()
 
     print("\n🔤 Most Common Words:")
     print("\nPositive Reviews:")
@@ -308,11 +321,11 @@ def create_word_clouds(reviews_df, text_column='review_text', save_path=None):
         axes[1].set_title('Negative Reviews Word Cloud', fontsize=14, fontweight='bold')
 
         plt.tight_layout()
-        if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        plt.show()
-
-        print("✓ Word clouds generated successfully")
+        if save_path is None:
+            save_path = 'word_clouds.png'
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"   ✓ Saved word clouds to: {save_path}")
+        plt.close()
     except ImportError:
         print("⚠️  wordcloud library not installed. Run: pip install wordcloud")
 
@@ -327,22 +340,22 @@ def run_task2_eda(reviews_df, text_column='review_text'):
 
     # 1. Sentiment distribution
     print("\n1. Analyzing sentiment distribution...")
-    analyze_review_sentiment_distribution(reviews_df)
+    analyze_review_sentiment_distribution(reviews_df, save_path='task2_sentiment_distribution.png')
 
     # 2. Text characteristics
     print("\n2. Analyzing review text characteristics...")
-    analyze_review_text_characteristics(reviews_df, text_column)
+    analyze_review_text_characteristics(reviews_df, text_column, save_path='task2_text_characteristics.png')
 
     # 3. Common words
     print("\n3. Analyzing most common words...")
-    analyze_common_words(reviews_df, text_column, n_top=20)
+    analyze_common_words(reviews_df, text_column, n_top=20, save_path='task2_common_words.png')
 
     # 4. Word clouds (optional)
     print("\n4. Generating word clouds...")
     try:
-        create_word_clouds(reviews_df, text_column)
-    except:
-        print("   Skipped (wordcloud library not available)")
+        create_word_clouds(reviews_df, text_column, save_path='task2_word_clouds.png')
+    except Exception as e:
+        print(f"   Skipped word clouds: {str(e)}")
 
     print("\n" + "=" * 70)
     print("TASK 2 EDA COMPLETE")
